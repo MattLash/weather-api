@@ -3,6 +3,16 @@
 // You can use Sass (SCSS) here: http://sass-lang.com/
 
 #weather_plot{
-    width:600px;
-    height:250px;
+    // width:600px;
+    // height:250px;
+}
+
+div.buttons{
+    margin: auto;
+    display: block;
+    text-align: center;
+}
+
+button.active{
+    background-color: red;
 }
