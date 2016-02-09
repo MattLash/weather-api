@@ -220,12 +220,8 @@ $(document).ready(function(){
         }
       
     }
-    
-    //-- update axes to fit initial dataset
-    // setTimeout(updatePlotAxes,400);
-    //-- update with fresh data and update chart every 30 seconds
+
     window.setInterval(updatePlots, 30000);
-    
     
 });
 
