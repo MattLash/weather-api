@@ -19,41 +19,17 @@
 
 $(document).ready(function(){
     
-    //establish parameters
+    //establish API access parameters
     var token = "hFeKdC6shdP9ZVVnczcNOqP6sgMetFendPqNrPPPeAs";
     var username = "mattl22";
     var userAndToken = username + ":" + token;
     var encodedToken = window.btoa(userAndToken);
     var encodedRequest = "Basic " + encodedToken;
     
-    function getWeatherData(){
-        var tempArray = [];
-        var timeArray = [];
+    //============== FUNCTION DEFINITIONS =============== //
+    function getStations(deployment){
         $.ajax({
-            url: 'https://reports.understoryweather.com/api/v1/data/base/current?deployment=somerville',
-            type: 'GET',
-            dataType: 'json',
-            headers: {
-                'Authorization': encodedRequest
-            }
-        }).done(function(data) {
-            console.log("get data working");
-            var tempData = data;
-            var stnId = "6ceceb681a5c"; // one of the 4 stations for somerville
-            var len=tempData[stnId].length;
-            for (var i=0; i<len; i++){
-                tempArray[i] = tempData[stnId][i].val;
-                timeArray[i] = timeConversion(tempData[stnId][i].timestamp);
-            }
-        }).fail(function(){
-            console.log("The first AJAX is not working!");
-        });
-        return [tempArray,timeArray];
-    }
-    
-    function getStations(){
-        $.ajax({
-            url: 'https://reports.understoryweather.com/api/v1/metadata/deployment/summary/somerville',
+            url: 'https://reports.understoryweather.com/api/v1/metadata/deployment/summary/'+deployment,
             type: 'GET',
             dataType: 'text',
             headers: {
@@ -64,6 +40,9 @@ $(document).ready(function(){
             for(var i=0, l=data2.length; i<l; i++){
                 $("#weather_table").find('tbody')
                     .append($('<tr>')
+                        .append($('<td>')
+                            .append(data2[i].deployment)
+                        )
                         .append($('<td>')
                             .append(data2[i].siteName)
                         )
@@ -82,17 +61,46 @@ $(document).ready(function(){
             console.log("The 2nd AJAX is not working!");
         });
     }
-    
-    var TESTER = document.getElementById('tester');
-// 	Plotly.plot( TESTER, [{
-// 	x: [1, 2, 3, 4, 5],
-// 	y: [1, 2, 4, 8, 16] }], {
-// 	margin: { t: 0 } } );
-	
-	
-    getStations();
-    weatherData = getWeatherData(); 
-    
+    function getStationId(deployment){
+        var deploymentId=[];
+        $.ajax({
+            url: 'https://reports.understoryweather.com/api/v1/metadata/deployment/summary/'+deployment,
+            type: 'GET',
+            dataType: 'json',
+            headers: {
+                'Authorization': encodedRequest
+            }
+        }).done(function(data) {
+            var depId = data[0].stationId;
+            deploymentId[0] = depId;
+        });
+        return deploymentId;
+    }
+    function getWeatherData(deployment,deploymentId){
+        var tempArray = [];
+        var timeArray = [];
+        $.ajax({
+            url: 'https://reports.understoryweather.com/api/v1/data/base/current?deployment='+deployment,
+            type: 'GET',
+            dataType: 'json',
+            headers: {
+                'Authorization': encodedRequest
+            }
+        }).done(function(data) {
+            
+            var tempData = data;
+            var stnId = deploymentId; // one of the 4 stations for somerville
+            console.log("get data working stationid"+stnId);
+            var len=tempData[stnId].length;
+            for (var i=0; i<len; i++){
+                tempArray[i] = tempData[stnId][i].val*1.8 + 32;
+                timeArray[i] = timeConversion(tempData[stnId][i].timestamp);
+            }
+        }).fail(function(){
+            console.log("The first AJAX is not working!");
+        });
+        return [tempArray,timeArray];
+    }
     function timeConversion(millisec) {
         // Create a new JavaScript Date object based on the timestamp
         // multiplied by 1000 so that the argument is in milliseconds, not seconds.
@@ -108,8 +116,6 @@ $(document).ready(function(){
         
         return formattedTime; 
     }
-    timeTest = timeConversion(1455024780000);
-    
     function plotData(weatherData){
         //plotly takes 3 arugments: the DOM element plot to, plot data & attributes "traces", layout
         var weatherPlot = document.getElementById('weather_plot');
@@ -119,14 +125,12 @@ $(document).ready(function(){
         }];
         var layout = {
             autoscale: true,
-            title: "Somerville Temperature in Last 30 Minutes",
+            title: " Temperature in Last 30 Minutes",
             xaxis: {
-                title: 'Time (HH:MM:SS)',
-                range: ["9:00:00","11:00:00"]
+                title: 'Time (HH:MM:SS)'
             },
             yaxis: {
-                title: 'Temperature C',
-                range: 'auto',
+                title: 'Temperature \u00b0F'
             },
             margin: {
                 
@@ -136,6 +140,41 @@ $(document).ready(function(){
         
     	Plotly.plot( weatherPlot, data, layout);
     }
+    function updatePlotAxes(){ 
+        document.querySelector('[data-title="Autoscale"]').click();
+        console.log("Updating the plot axes now!");
+    }
+    function updatePlots(){
+        var updatedSomervilleData = getWeatherData('somerville','6ceceb681a5c');
+        var updatedDallasData = getWeatherData('dallas','6ceceb6634e8');
+        
+        plotData(updatedWeatherData);
+        setTimeout(updatePlotAxes,400);
+        console.log('updating plot data and axes');
+    }
     
-    plotData(weatherData);
+    //============== FUNCTION CALLS =============//
+    //-- call initial stations and weather data for Somerville & Dallas
+    getStations('somerville');
+    getStations('dallas');
+    
+    
+    
+    // var somervilleStationId = getStationId('somerville');
+    
+    var somervilleWeatherData = getWeatherData('somerville','6ceceb681a5c');
+    
+    var dallasWeatherData = getWeatherData('dallas', '6ceceb6634e8');
+    //-- plot initial somerville data
+    plotData(somervilleWeatherData);
+    plotData(dallasWeatherData);
+    // plotData(weatherDataDallas);
+    //-- update axes to fit initial dataset
+    setTimeout(updatePlotAxes,400);
+    //-- update with fresh data and update chart every 30 seconds
+    window.setInterval(updatePlots, 30000);
+    
+    getStationId('dallas');
 });
+
+ 
