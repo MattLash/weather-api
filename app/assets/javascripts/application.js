@@ -119,6 +119,7 @@ $(document).ready(function(){
     function plotData(weatherData){
         //plotly takes 3 arugments: the DOM element plot to, plot data & attributes "traces", layout
         var weatherPlot = document.getElementById('weather_plot');
+        
         var data = [{
             x: weatherData[1],
             y: weatherData[0]
@@ -137,18 +138,20 @@ $(document).ready(function(){
             },
                 hovermode: 'closest'
         };
-        
     	Plotly.plot( weatherPlot, data, layout);
     }
     function updatePlotAxes(){ 
         document.querySelector('[data-title="Autoscale"]').click();
         console.log("Updating the plot axes now!");
+        
     }
     function updatePlots(){
+        Plotly.deleteTraces(document.getElementById('weather_plot'), [0,1]);
         var updatedSomervilleData = getWeatherData('somerville','6ceceb681a5c');
         var updatedDallasData = getWeatherData('dallas','6ceceb6634e8');
         
-        plotData(updatedWeatherData);
+        plotData(updatedSomervilleData);
+        plotData(updatedDallasData);
         setTimeout(updatePlotAxes,400);
         console.log('updating plot data and axes');
     }
@@ -168,13 +171,13 @@ $(document).ready(function(){
     //-- plot initial somerville data
     plotData(somervilleWeatherData);
     plotData(dallasWeatherData);
-    // plotData(weatherDataDallas);
+    
     //-- update axes to fit initial dataset
     setTimeout(updatePlotAxes,400);
     //-- update with fresh data and update chart every 30 seconds
     window.setInterval(updatePlots, 30000);
     
-    getStationId('dallas');
+    
 });
 
  
